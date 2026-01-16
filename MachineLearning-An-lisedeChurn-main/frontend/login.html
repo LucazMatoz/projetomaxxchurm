@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Sistema MAXX</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      animation: fadeIn 0.4s ease;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-container {
+      margin-bottom: 20px;
+    }
+
+    .logo-container img {
+      height: 60px;
+      width: auto;
+      margin-bottom: 15px;
+    }
+
+    .login-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .login-header p {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .login-group {
+      margin-bottom: 20px;
+    }
+
+    .login-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .login-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      font-size: 15px;
+      transition: all 0.2s;
+      background: white;
+      color: #1e293b;
+    }
+
+    .login-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .password-container {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+    }
+
+    .btn-login {
+      width: 100%;
+      margin-top: 10px;
+      padding: 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .login-error {
+      margin-top: 14px;
+      font-size: 14px;
+      color: #ef4444;
+      text-align: center;
+      display: none;
+      padding: 12px;
+      background: #fef2f2;
+      border-radius: 8px;
+      border: 1px solid #fecaca;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo-container">
+        <img src="logo.png" alt="Logo MAXX">
+      </div>
+      <h1>ANÁLISE PREDITIVA</h1>
+      <p>Faça login para acessar o sistema</p>
+    </div>
+
+    <form id="loginForm">
+      <div class="login-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" placeholder="seu.email@empresa.com" required>
+      </div>
+
+      <div class="login-group">
+        <label for="senha">Senha</label>
+        <div class="password-container">
+          <input type="password" id="senha" placeholder="Digite sua senha" required>
+          <button type="button" class="toggle-password" id="togglePassword">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" class="btn-login" onclick="login()">
+        <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
+      </button>
+
+      <div id="erro" class="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Mostrar/ocultar senha
+  document.getElementById('togglePassword').addEventListener('click', function() {
+    const senhaInput = document.getElementById('senha');
+    const icon = this.querySelector('i');
+    
+    if (senhaInput.type === 'password') {
+      senhaInput.type = 'text';
+      icon.className = 'fas fa-eye-slash';
+    } else {
+      senhaInput.type = 'password';
+      icon.className = 'fas fa-eye';
+    }
+  });
+
+  // Permitir Enter para login
+  document.getElementById('senha').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      login();
+    }
+  });
+
+  function login() {
+    const email = document.getElementById("email").value.trim();
+    const senha = document.getElementById("senha").value.trim();
+    const erro = document.getElementById("erro");
+
+    erro.style.display = "none";
+    erro.textContent = "";
+
+    if (!email || !senha) {
+      showError("Preencha todos os campos.");
+      return;
+    }
+
+    // Carregar usuários do localStorage
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+    
+    // ADICIONAR USUÁRIOS PADRÃO SE NÃO EXISTIREM
+    if (usuarios.length === 0) {
+      // ADMIN padrão
+      const adminPadrao = {
+        nome: "Administrador MAXX",
+        email: "maxx2026@gmail.com",
+        senha: "maxx2026",
+        setor: "Administração",
+        isAdmin: true,
+        isAtivo: true,
+        dataCadastro: new Date().toISOString()
+      };
+      
+      // Usuário normal padrão
+      const usuarioNormal = {
+        nome: "Usuário Teste",
+        email: "usuario@teste.com",
+        senha: "teste123",
+        setor: "TI",
+        isAdmin: false,
+        isAtivo: true,
+        dataCadastro: new Date().toISOString()
+      };
+      
+      usuarios.push(adminPadrao, usuarioNormal);
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+    }
+
+    // Buscar usuário
+    const usuario = usuarios.find(u => 
+      u.email.toLowerCase() === email.toLowerCase() && 
+      u.senha === senha && 
+      u.isAtivo === true
+    );
+
+    if (usuario) {
+      // Salvar sessão
+      localStorage.setItem("usuario_logado", "true");
+      localStorage.setItem("usuario_atual", JSON.stringify(usuario));
+      localStorage.setItem("nome_usuario", usuario.nome);
+      localStorage.setItem("setor_usuario", usuario.setor || "Não informado");
+
+      // Registrar login (opcional - API)
+      try {
+        fetch("http://127.0.0.1:5000/registrar_login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            nome: usuario.nome, 
+            email: usuario.email, 
+            setor: usuario.setor 
+          })
+        });
+      } catch (err) {
+        console.log("API offline, continuando...");
+      }
+
+      // Redirecionar conforme perfil
+      if (usuario.isAdmin) {
+        window.location.href = "cadastro.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    } else {
+      showError("E-mail ou senha inválidos.");
+    }
+  }
+
+  function showError(message) {
+    const erro = document.getElementById("erro");
+    erro.textContent = message;
+    erro.style.display = "block";
+    
+    // Adicionar animação
+    erro.style.animation = 'none';
+    setTimeout(() => {
+      erro.style.animation = 'fadeIn 0.3s ease';
+    }, 10);
+  }
+
+  // Verificar se já está logado
+  document.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem("usuario_logado") === "true") {
+      const usuario = JSON.parse(localStorage.getItem("usuario_atual") || '{}');
+      if (usuario.isAdmin) {
+        window.location.href = "cadastro.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

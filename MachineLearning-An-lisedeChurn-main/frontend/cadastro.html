@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro de Usuários - Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-container {
+      margin-bottom: 15px;
+    }
+
+    .logo-container img {
+      height: 50px;
+      width: auto;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1e293b;
+      transition: all 0.3s;
+      background: white;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .password-container {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+    }
+    
+    /* Estilo para opções de sim/não */
+    .options-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .option-label {
+      font-size: 14px;
+      color: #1e293b;
+      font-weight: 600;
+      min-width: 180px;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #3b82f6;
+    }
+    
+    .radio-option label {
+      font-size: 14px;
+      color: #1e293b;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    
+    .status-ativo {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .status-inativo {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+    
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .alert-success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    .back-link a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s;
+    }
+
+    .back-link a:hover {
+      color: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="logo-container">
+          <img src="logo.png" alt="Logo MAXX">
+        </div>
+        <h1>Cadastro de Usuário</h1>
+        <p>Painel administrativo - Acesso restrito</p>
+      </div>
+      
+      <div id="alert" class="alert"></div>
+      
+      <form id="cadastroForm">
+        <div class="form-group">
+          <label for="nome">Nome Completo</label>
+          <input type="text" id="nome" placeholder="Digite o nome completo" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" placeholder="usuario@empresa.com" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <div class="password-container">
+            <input type="password" id="senha" placeholder="Mínimo 8 caracteres" required minlength="8">
+            <button type="button" class="toggle-password" id="togglePassword">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="setor">Setor/Departamento</label>
+          <select id="setor" required>
+            <option value="">Selecione um setor</option>
+            <option value="comercial">Comercial</option>
+            <option value="atendimento">Atendimento</option>
+            <option value="financeiro">Financeiro</option>
+            <option value="marketing">Marketing</option>
+            <option value="ti">TI</option>
+            <option value="administrativo">Administrativo</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <div class="options-group">
+            <!-- Checkbox Sim/Não para Administrador -->
+            <div class="option-row">
+              <span class="option-label">Usuário é Administrador?</span>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="adminSim" name="isAdmin" value="true">
+                  <label for="adminSim">Sim</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="adminNao" name="isAdmin" value="false" checked>
+                  <label for="adminNao">Não</label>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Checkbox Ativo/Inativo -->
+            <div class="option-row">
+              <span class="option-label">Usuário está Ativo?</span>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="ativoSim" name="isAtivo" value="true" checked>
+                  <label for="ativoSim">Sim</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="ativoNao" name="isAtivo" value="false">
+                  <label for="ativoNao">Não</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="buttons">
+          <button type="button" class="btn btn-secondary" onclick="voltarParaPredicao()">
+            <i class="fas fa-chart-line"></i> Painel de Predição
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Cadastrar Usuário
+          </button>
+        </div>
+      </form>
+      
+      <div class="back-link">
+        <a href="#" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Sair do Sistema
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mostrar/ocultar senha
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const senhaInput = document.getElementById('senha');
+      const icon = this.querySelector('i');
+      
+      if (senhaInput.type === 'password') {
+        senhaInput.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        senhaInput.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    });
+    
+    // Envio do formulário
+    document.getElementById('cadastroForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const nome = document.getElementById('nome').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const senha = document.getElementById('senha').value;
+      const setor = document.getElementById('setor').value;
+      
+      // Obter valores dos radio buttons
+      const isAdmin = document.querySelector('input[name="isAdmin"]:checked').value === 'true';
+      const isAtivo = document.querySelector('input[name="isAtivo"]:checked').value === 'true';
+      
+      // Validações
+      if (!nome || !email || !senha || !setor) {
+        showAlert('Preencha todos os campos!', 'error');
+        return;
+      }
+      
+      if (senha.length < 8) {
+        showAlert('A senha deve ter no mínimo 8 caracteres!', 'error');
+        return;
+      }
+      
+      // Verificar se email já existe
+      let usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
+      const emailExistente = usuarios.find(u => u.email.toLowerCase() === email);
+      
+      if (emailExistente) {
+        showAlert('Este e-mail já está cadastrado!', 'error');
+        return;
+      }
+      
+      const usuario = {
+        nome: nome,
+        email: email,
+        senha: senha,
+        setor: setor,
+        isAdmin: isAdmin,
+        isAtivo: isAtivo,
+        dataCadastro: new Date().toISOString()
+      };
+      
+      // Salvar no localStorage
+      usuarios.push(usuario);
+      localStorage.setItem('usuarios', JSON.stringify(usuarios));
+      
+      // Mostrar mensagem de sucesso
+      showAlert('Usuário cadastrado com sucesso!', 'success');
+      
+      // Limpar formulário (exceto os radio buttons)
+      document.getElementById('cadastroForm').reset();
+      
+      // Resetar radio buttons para valores padrão
+      document.getElementById('adminNao').checked = true;
+      document.getElementById('ativoSim').checked = true;
+    });
+    
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.textContent = message;
+      alert.className = `alert alert-${type}`;
+      alert.style.display = 'block';
+      
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 3000);
+    }
+    
+    function voltarParaPredicao() {
+      window.location.href = 'index.html';
+    }
+
+    function logout() {
+      localStorage.removeItem('usuario_logado');
+      localStorage.removeItem('usuario_atual');
+      localStorage.removeItem('nome_usuario');
+      localStorage.removeItem('setor_usuario');
+      window.location.href = 'login.html';
+    }
+
+    // Verificar se é administrador
+    document.addEventListener('DOMContentLoaded', function() {
+      const usuarioAtual = JSON.parse(localStorage.getItem('usuario_atual') || '{}');
+      
+      if (localStorage.getItem('usuario_logado') !== 'true' || !usuarioAtual.isAdmin) {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
+</body>
+</html>

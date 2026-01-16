@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análise Preditiva de Cancelamento</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       ESTILOS GERAIS E DA GUIA 1 (PREDIÇÃO) - Mantidos do index.html original
+       ========================================================================== */
+    .tabs-container { margin-bottom: 24px; }
+    .tabs-buttons { display: flex; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 0; margin-bottom: 20px; }
+    .tab-button { padding: 12px 24px; background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--muted); font-weight: 500; cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; bottom: -1px; }
+    .tab-button:hover { color: var(--text); background: rgba(59, 130, 246, 0.05); }
+    .tab-button.active { color: var(--primary); background: var(--card); border-color: var(--line); border-bottom-color: var(--card); }
+    .tab-button i { margin-right: 8px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Loading Overlay */
+    .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; flex-direction: column; gap: 20px; color: white; font-size: 18px; }
+    .loading-spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #3b82f6; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* ==========================================================================
+       ESTILOS OTIMIZADOS PARA O DASHBOARD MODERNO
+       ========================================================================== */
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --line: #e5e7eb;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      --radius: 0.75rem;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Layout do Dashboard - Moderno */
+    .dashboard-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header Moderno */
+    .dashboard-header {
+      background: linear-gradient(135deg, var(--card) 0%, #f8fafc 100%);
+      border-radius: var(--radius);
+      padding: 24px;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-md);
+      animation: slideInLeft 0.4s ease;
+    }
+
+    @keyframes slideInLeft {
+      from { transform: translateX(-20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .dashboard-title h2 {
+      font-size: 1.75rem;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+    }
+    
+    .dashboard-title p {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+      max-width: 800px;
+      margin: 0;
+    }
+
+    /* Filtros Modernos */
+    .filters-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      animation: fadeIn 0.4s ease 0.1s both;
+    }
+    
+    .filters-section h3 {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+    
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    
+    .filters-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+    
+    /* Cards de Métricas - Design Moderno */
+    .metrics-section {
+      margin-bottom: 20px;
+      animation: fadeIn 0.4s ease 0.2s both;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    
+    @media (max-width: 1200px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .metric-card {
+      background: linear-gradient(135deg, var(--card) 0%, #f8fafc 100%);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .metric-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary);
+    }
+    
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    
+    .metric-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .metric-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1;
+      font-feature-settings: "tnum";
+    }
+    
+    .metric-description {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+      opacity: 0.9;
+    }
+
+    /* Gráficos Modernos */
+    .charts-section {
+      margin-bottom: 20px;
+      animation: fadeIn 0.4s ease 0.3s both;
+    }
+    
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 24px;
+    }
+    
+    @media (max-width: 768px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .chart-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      transition: var(--transition);
+    }
+    
+    .chart-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .chart-card h3 {
+      font-size: 1.1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .chart-container {
+      height: 280px;
+      position: relative;
+      width: 100%;
+    }
+    
+    .chart-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .chart-control {
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .chart-control:hover {
+      background: var(--line);
+      border-color: var(--primary);
+    }
+    
+    .chart-control select {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      font-size: 0.85rem;
+      min-width: 100px;
+    }
+
+    /* Tabela Moderna */
+    .data-table-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      animation: fadeIn 0.4s ease 0.4s both;
+    }
+    
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .table-header h3 {
+      font-size: 1.1rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .search-box {
+      position: relative;
+      width: 280px;
+      max-width: 100%;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px 10px 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: var(--bg);
+      color: var(--text);
+      transition: var(--transition);
+    }
+    
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .search-box i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    
+    /* Tabela Moderna */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      max-height: 500px;
+      scroll-behavior: smooth;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 1000px;
+    }
+    
+    thead {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    th {
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 2px solid var(--line);
+      white-space: nowrap;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+    
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      color: var(--text);
+    }
+    
+    tbody tr {
+      transition: var(--transition);
+    }
+    
+    tbody tr:hover {
+      background: rgba(59, 130, 246, 0.05);
+      transform: scale(1.002);
+    }
+    
+    /* Paginação Moderna */
+    .pagination-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .pagination-info {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .pagination-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .page-btn {
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.85rem;
+      color: var(--text);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 100px;
+      justify-content: center;
+    }
+    
+    .page-btn:hover:not(.disabled) {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .page-btn.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .page-number {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.9rem;
+      padding: 0 12px;
+      background: var(--bg);
+      border-radius: 6px;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* Loading e Erros Modernos */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      text-align: center;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+    }
+    
+    .loading-spinner-lg {
+      width: 50px;
+      height: 50px;
+      border: 3px solid var(--line);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    .error-container {
+      padding: 20px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .error-container i {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .error-container h4 {
+      margin: 0 0 4px 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    
+    .error-container p {
+      margin: 0;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    /* Formulários Modernos */
+    .form-group {
+      margin-bottom: 0;
+    }
+    
+    .form-group label {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .form-control {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      transition: var(--transition);
+      width: 100%;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Botões Modernos */
+    .btn {
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition);
+      border: none;
+      text-decoration: none;
+      white-space: nowrap;
+      justify-content: center;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, #1d4ed8 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+      transform: translateY(-2px);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<body>
+
+<audio id="alertSound" preload="auto">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
+</audio>
+
+<div class="alert-notification hidden" id="alertNotification">
+  <div class="alert-icon">!</div>
+  <div class="alert-content">
+    <h4>Alto Risco de Churn Detectado!</h4>
+    <p>Cliente com probabilidade elevada de cancelamento.</p>
+  </div>
+  <button class="close-alert" onclick="closeAlert()">×</button>
+</div>
+
+<div class="resize-indicator" id="resizeIndicator">Largura: <span id="sidebarWidth">300px</span></div>
+
+<div class="app-layout">
+
+  <aside class="sidebar slide-in-left" id="sidebar">
+    <div class="sidebar-header" style="display: flex; flex-direction: column; align-items: center; padding-top: 10px; margin-top: -5px;">
+      
+      <a href="https://www.sejamaxx.com.br/" target="_blank" class="logo-led-container" style="position: relative; overflow: hidden; line-height: 0; cursor: pointer; display: block; margin-bottom: 20px;">
+        <img src="logo.png" alt="Logo Maxx" style="width: 180px; height: auto; display: block;">
+        <div class="led-shine"></div>
+      </a>
+
+      <h2 style="display: block; text-align: center; margin: 0; padding: 0; font-size: 1.2rem; font-weight: 700; color: var(--text);">Histórico</h2>
+      
+      <div class="sidebar-controls" style="margin-top: 10px;">
+        <button class="btn-clear" onclick="limparHistorico()">
+          <i class="fas fa-trash"></i> Limpar Histórico
+        </button>
+        
+      </div>
+      
+    </div>
+
+    <style>
+      .logo-led-container .led-shine {
+        position: absolute;
+        top: 0;
+        left: -150%;
+        width: 60%; /* Feixe um pouco mais largo para ver melhor */
+        height: 100%;
+        background: linear-gradient(
+          to right, 
+          rgba(255, 255, 255, 0) 0%, 
+          rgba(255, 255, 255, 0.6) 50%, /* Brilho mais intenso */
+          rgba(255, 255, 255, 0) 100%
+        );
+        transform: skewX(-25deg);
+        /* Animação total de 5 segundos: corre devagar e espera um pouco para repetir */
+        animation: shine-led 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      @keyframes shine-led {
+        0% { left: -150%; }
+        40% { left: 150%; } /* O feixe atravessa durante os primeiros 2 segundos */
+        100% { left: 150%; } /* Fica parado no final antes de reiniciar */
+      }
+      
+      /* Efeito de zoom suave ao passar o mouse na logo */
+      .logo-led-container img {
+        transition: transform 0.3s ease;
+      }
+      .logo-led-container:hover img {
+        transform: scale(1.03);
+      }
+    </style>
+    
+    <div class="history-stats">
+      <div class="stat-item">
+        <div class="stat-value" id="totalAnalises">0</div>
+        <div class="stat-label">Total de Análises</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="altoRisco">0</div>
+        <div class="stat-label">Risco Alto</div>
+      </div>
+    </div>
+    
+    <div class="history-container">
+      <div class="history" id="historyList">
+        </div>
+    </div>
+
+    <button class="btn-logout" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Sair do Sistema</span>
+    </button>
+
+    <script>
+        // 1. TRAVA DE SEGURANÇA (Verifica assim que a página carrega)
+        if (localStorage.getItem("usuario_logado") !== "true") {
+            window.location.href = "login.html";
+        }
+
+        // 2. FUNÇÃO DE LOGOUT
+        function logout() {
+            // Pequeno delay para o usuário ver o clique no botão
+            const btn = document.querySelector('.btn-logout');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saindo...';
+            
+            setTimeout(() => {
+                localStorage.clear(); 
+                window.location.href = "login.html";
+            }, 400);
+        }
+    </script>
+
+    
+    <div class="resize-handle" id="resizeHandle"></div>
+  </aside>
+
+  <main class="main" id="mainContent">
+    <div class="content fade-in">
+
+      <div class="tabs-container">
+        <div class="tabs-buttons">
+          <button type="button" id="tabBtnPredicao" class="tab-button active" onclick="showTab('tabPredicao')">
+            <i class="fas fa-chart-line"></i> Predição
+          </button>
+          <button type="button" id="tabBtnDashboard" class="tab-button" onclick="showTab('tabDashboard')">
+            <i class="fas fa-chart-pie"></i> Dashboard
+          </button>
+        </div>
+
+        <div id="tabPredicao" class="tab-content active">
+          <div class="page-header" style="text-align: center;">
+            
+          </div>
+          
+          <section class="card">
+            <div class="card-header">
+  <div>
+    <div class="title-with-tooltip" style="
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    ">
+      <h2 class="card-title" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0;
+      ">
+        Buscar Cliente na Base
+        <i class="fas fa-info-circle" style="
+          color: #6b7280;
+          font-size: 16px;
+          transition: color 0.2s;
+        "></i>
+      </h2>
+      
+      <!-- Tooltip estilizado -->
+      <div class="custom-tooltip" style="
+         position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s;
+        margin-top: 8px;
+      ">
+        <div style="margin-bottom: 12px;">
+          <!-- Primeira linha - Alinhada à esquerda -->
+          <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+            <i class="fas fa-database" style="color: #6b7280; font-size: 13px; margin-top: 1px; flex-shrink: 0;"></i>
+            <span style="font-size: 13px; color: #1f2937; line-height: 1.4; text-align: left;">
+              Carregue automaticamente os dados de um cliente existente
+            </span>
+          </div>
+          
+          <!-- Segunda linha - Alinhada à esquerda -->
+          <div style="display: flex; align-items: flex-start; gap: 8px;">
+            <i class="fas fa-calendar-alt" style="color: #6b7280; font-size: 13px; margin-top: 1px; flex-shrink: 0;"></i>
+            <span style="font-size: 13px; color: #1f2937; line-height: 1.4; text-align: left;">
+              Base atualizada até 31/10/2025
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- JavaScript para mostrar/ocultar -->
+    <script>
+      const titleElement = document.querySelector('.title-with-tooltip');
+      const tooltipElement = titleElement.querySelector('.custom-tooltip');
+      
+      titleElement.addEventListener('mouseenter', () => {
+        tooltipElement.style.opacity = '1';
+        tooltipElement.style.visibility = 'visible';
+        tooltipElement.style.transform = 'translateY(0)';
+      });
+      
+      titleElement.addEventListener('mouseleave', () => {
+        tooltipElement.style.opacity = '0';
+        tooltipElement.style.visibility = 'hidden';
+        tooltipElement.style.transform = 'translateY(10px)';
+      });
+    </script>
+  </div>
+</div>
+            
+            <div class="form-grid" style="grid-template-columns: 1fr auto;">
+              <div class="form-group">
+                <label for="ID_CLIENTE">Digite o ID do Cliente</label>
+                <input type="text" id="ID_CLIENTE" placeholder="Ex: 167683" autocomplete="off" />
+                <div class="field-hint">Informe o ID do cliente para buscar seus dados</div>
+              </div>
+
+              <div class="form-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; transform: translateY(7px);">
+                  
+                  <button type="button" id="buscarBtn" onclick="buscarCliente(event)" 
+                      style="padding: 10px 18px; font-size: 13px; white-space: nowrap; height: 42px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                      <i class="fas fa-search"></i> Buscar
+                  </button>
+
+                  <button type="button" id="corrigirDataBtn" onclick="atualizarDadosParaHoje(event)" 
+                      style="padding: 10px 18px; font-size: 13px; white-space: nowrap; height: 42px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                      <i class="fas fa-history"></i> Corrigir Data
+                  </button>
+
+                  <button type="button" id="atendimentoBtn" onclick="simularContatoHoje(event)" 
+                      style="padding: 10px 18px; font-size: 13px; white-space: nowrap; height: 42px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                      <i class="fas fa-headset"></i> Atendimento Hoje
+                  </button>
+
+                  <button 
+                      type="button" 
+                      id="salvarCsvBtn" 
+                      onclick="salvarNoHistoricoReal(event); return false;" 
+                      class="btn btn-primary"
+                  >
+                      <i class="fas fa-save"></i> Salvar no Histórico
+                  </button>
+
+              </div>
+            </div>
+          </section>
+
+      <section class="card">
+  <div class="card-header">
+    <div>
+      <h2 class="card-title">Variáveis do Modelo Preditivo</h2>
+      <p class="card-subtitle">Dados utilizados para calcular a probabilidade de churn</p>
+    </div>
+  </div>
+
+      <div class="form-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; align-items: end;">
+  
+  <!-- PRIMEIRA LINHA (5 primeiros campos) -->
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="QTD_SOL_LAST_30D" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Solicitações (30 dias)
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="QTD_SOL_LAST_30D" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Quantidade de atendimentos realizados pelo cliente nos últimos 30 dias, indicando pressão recente sobre o serviço.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="DAYS_SINCE_LAST" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Último Contato (dias)
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="DAYS_SINCE_LAST" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Número de dias desde o último atendimento registrado do cliente, refletindo a recência da interação.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="N_UNIQUE_DATES" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Dias únicos interação
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="N_UNIQUE_DATES" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Total de dias distintos em que o cliente entrou em contato com a empresa, indicando recorrência ao longo do tempo.
+    </div>
+</div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="TAXA_CONTATO_DIA" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Contatos por Dia
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="TAXA_CONTATO_DIA" step="0.01" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Quantidade de atendimentos do cliente, representando a intensidade de uso do canal de suporte.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="QTD_REGISTROS_CLIENTE" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Total de Registros
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="QTD_REGISTROS_CLIENTE" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Número total de atendimentos registrados para o cliente durante todo o histórico disponível.
+    </div>
+  </div>
+
+  <!-- SEGUNDA LINHA (5 últimos campos) -->
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="QTD_FINANCEIRO_mean" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Financeiro (Qtd)
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="QTD_FINANCEIRO_mean" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Quantidade de atendimentos relacionados a cobrança, fatura, pagamento ou negociação financeira.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="QTD_SUPORTE_TECNICO_mean" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Suporte (Qtd)
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="QTD_SUPORTE_TECNICO_mean" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Quantidade de atendimentos associados a problemas técnicos, como conexão, sinal ou equipamento.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="QTD_ADMINISTRATIVO_mean" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Adm. (Qtd)
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="QTD_ADMINISTRATIVO_mean" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Quantidade de atendimentos administrativos, como atualização cadastral, endereço ou agendamento.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="QTD_OUTROS_mean" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Outras Solicitações
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="QTD_OUTROS_mean" step="any" value="0" min="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Quantidade de atendimentos que não se enquadram nas categorias principais definidas.
+    </div>
+  </div>
+
+  <div class="form-group" style="display: flex; flex-direction: column; position: relative;">
+    <label for="JA_TENTOU_CANCELAR_max" style="font-size: 12px; min-height: 32px; display: flex; align-items: flex-end; margin-bottom: 6px; line-height: 1.1; cursor: help; white-space: nowrap;">
+      Tentativa de Cancelamento
+      <i class="fas fa-info-circle" style="margin-left: 4px; color: #6b7280; font-size: 10px;"></i>
+    </label>
+    <input type="number" id="JA_TENTOU_CANCELAR_max" min="0" max="1" step="1" value="0" style="height: 38px;">
+    <div class="field-tooltip">
+      Indica se o cliente encontra-se ativo (0) ou se realizou o cancelamento do serviço (1).
+    </div>
+  </div>
+</div>
+
+      <div class="center" style="margin-top: 24px;">
+        <button type="button" id="btnMain" class="btn btn-primary" onclick="analyzeChurn()" style="width: 100%; padding: 14px; font-size: 15px;">
+          <i class="fas fa-chart-line"></i> Analisar Risco de Churn
+        </button>
+      </div>
+    </section>
+          <div style="margin-top: 20px; padding: 15px; background: #FFFFFF; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow);">
+              <h4 style="font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Limiares de Risco</h4>
+              <div style="display: flex; justify-content: space-between; gap: 10px;">
+                <div style="flex: 1; text-align: center;">
+                  <div style="height: 6px; background: #10b981; border-radius: 3px; margin-bottom: 5px;"></div>
+                  <span style="font-size: 0.75rem; font-weight: 800; color: #10b981;">BAIXO</span>
+                  <p style="font-size: 0.75rem; color: var(--muted); margin: 0; font-weight: 500;">0% - 29%</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                  <div style="height: 6px; background: #f59e0b; border-radius: 3px; margin-bottom: 5px;"></div>
+                  <span style="font-size: 0.75rem; font-weight: 800; color: #f59e0b;">MÉDIO</span>
+                  <p style="font-size: 0.75rem; color: var(--muted); margin: 0; font-weight: 500;">30% - 59%</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                  <div style="height: 6px; background: #ef4444; border-radius: 3px; margin-bottom: 5px;"></div>
+                  <span style="font-size: 0.75rem; font-weight: 800; color: #ef4444;">ALTO</span>
+                  <p style="font-size: 0.75rem; color: var(--muted); margin: 0; font-weight: 500;">60% - 100%</p>
+                </div>
+              </div>
+            </div>
+
+          <section class="card result" id="resultContainer" style="display:none;">
+            <p class="risk-level">Probabilidade de Cancelamento</p>
+            <h2 id="resultValue">0%</h2>
+            <p style="color: var(--muted); margin-bottom: 16px; font-size: 14px;">Nível de Risco</p>
+            <div class="badge" id="riskBadge">CARREGANDO...</div>
+          </section>
+        </div>
+
+        <!-- GUIA 2 - DASHBOARD MODERNO E OTIMIZADO -->
+        <div id="tabDashboard" class="tab-content">
+          <div class="dashboard-container">
+            <!-- Cabeçalho Moderno -->
+            <div class="dashboard-header">
+              <div class="dashboard-title">
+                <h2><i class="fas fa-chart-pie"></i> Dashboard Analítico</h2>
+                <p>Visualização e análise dos dados carregados do dataset. Utilize os filtros abaixo para refinar sua análise.</p>
+              </div>
+            </div>
+
+            <!-- Seção de Filtros Moderna -->
+            <div class="filters-section">
+              <h3><i class="fas fa-filter"></i> Filtros e Controles</h3>
+              <div class="filters-grid">
+                <div class="form-group">
+                  <label for="filterDateStart"><i class="fas fa-calendar-alt"></i> Data Inicial</label>
+                  <input type="date" id="filterDateStart" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label for="filterDateEnd"><i class="fas fa-calendar-alt"></i> Data Final</label>
+                  <input type="date" id="filterDateEnd" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label for="filterStatus"><i class="fas fa-user-tag"></i> Status</label>
+                  <select id="filterStatus" class="form-control">
+                    <option value="">Todos os Clientes</option>
+                    <option value="ativo">Clientes Ativos</option>
+                    <option value="churn">Clientes com Churn</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="filterGender"><i class="fas fa-venus-mars"></i> Gênero</label>
+                  <select id="filterGender" class="form-control">
+                    <option value="">Todos os Gêneros</option>
+                  </select>
+                </div>
+              </div>
+              <div class="filters-actions">
+                <button class="btn btn-primary" id="applyFiltersBtn">
+                  <i class="fas fa-sync-alt"></i> Aplicar Filtros
+                </button>
+                <button class="btn btn-secondary" id="resetFiltersBtn">
+                  <i class="fas fa-undo"></i> Limpar
+                </button>
+                <button class="btn btn-success" id="exportDataBtn">
+                  <i class="fas fa-download"></i> Exportar
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="dashboardLoading" class="loading-container" style="display:none;">
+              <div class="loading-spinner-lg"></div>
+              <h3 style="margin-bottom: 8px; color: var(--text); font-size: 1rem;">Carregando dados...</h3>
+              <p style="color: var(--muted); max-width: 400px; margin: 0 auto; font-size: 0.85rem;">Processando dataset para análise</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="dashboardError" class="error-container" style="display: none;">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>
+                <h4>Erro ao carregar dados</h4>
+                <p id="errorMessage">Ocorreu um erro ao carregar o dataset.</p>
+              </div>
+            </div>
+
+            <!-- Conteúdo Principal do Dashboard -->
+            <div id="dashboardContent" style="display: none;">
+              
+              <!-- Seção de KPIs Moderna -->
+              <div class="metrics-section">
+                <div class="metrics-grid">
+                  <div class="metric-card">
+                    <div class="metric-header">
+                      <div class="metric-title">Total de Registros</div>
+                      <div class="metric-icon"><i class="fas fa-database"></i></div>
+                    </div>
+                    <div class="metric-value" id="kpiTotalRecords">0</div>
+                    <div class="metric-description">Total de linhas no recorte filtrado</div>
+                  </div>
+
+                  <div class="metric-card">
+                    <div class="metric-header">
+                      <div class="metric-title">Taxa de Churn</div>
+                      <div class="metric-icon"><i class="fas fa-percent"></i></div>
+                    </div>
+                    <div class="metric-value" id="kpiChurnRate">0%</div>
+                    <div class="metric-description">Percentual de clientes DESLIGADO</div>
+                  </div>
+
+                  <div class="metric-card">
+                    <div class="metric-header">
+                      <div class="metric-title">Clientes Ativos</div>
+                      <div class="metric-icon"><i class="fas fa-users"></i></div>
+                    </div>
+                    <div class="metric-value" id="kpiActiveClients">0</div>
+                    <div class="metric-description">Clientes LIGADO (último status)</div>
+                  </div>
+
+                  <div class="metric-card">
+                    <div class="metric-header">
+                      <div class="metric-title">Churn Detectado</div>
+                      <div class="metric-icon"><i class="fas fa-user-times"></i></div>
+                    </div>
+                    <div class="metric-value" id="kpiChurnClients">0</div>
+                    <div class="metric-description">Clientes DESLIGADO (último status)</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seção de Gráficos Modernos -->
+              <div class="charts-section">
+                <div class="charts-grid">
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3><i class="fas fa-chart-bar"></i> Distribuição por Serviço</h3>
+                      <div class="chart-controls">
+                        <div class="chart-control">
+                          <select id="chart1Type" class="form-control" style="padding: 4px 8px; height: auto;">
+                            <option value="bar">Barras</option>
+                            <option value="pie">Pizza</option>
+                            <option value="doughnut">Rosca</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="chart-container">
+                      <canvas id="chartService"></canvas>
+                    </div>
+                  </div>
+
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3><i class="fas fa-chart-pie"></i> Distribuição por Gênero</h3>
+                      <div class="chart-controls">
+                        <div class="chart-control">
+                          <select id="chart2Type" class="form-control" style="padding: 4px 8px; height: auto;">
+                            <option value="pie">Pizza</option>
+                            <option value="doughnut">Rosca</option>
+                            <option value="bar">Barras</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="chart-container">
+                      <canvas id="chartGender"></canvas>
+                    </div>
+                  </div>
+
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3><i class="fas fa-chart-line"></i> Tendência de Churn</h3>
+                      <div class="chart-controls">
+                        <div class="chart-control">
+                          <select id="chart3Type" class="form-control" style="padding: 4px 8px; height: auto;">
+                            <option value="line">Linha</option>
+                            <option value="bar">Barras</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="chart-container">
+                      <canvas id="chartTimeTrend"></canvas>
+                    </div>
+                  </div>
+
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3><i class="fas fa-map-marker-alt"></i> Top Cidades com Churn</h3>
+                      <div class="chart-controls">
+                        <div class="chart-control">
+                          <select id="chart4Type" class="form-control" style="padding: 4px 8px; height: auto;">
+                            <option value="barHorizontal">Horizontal</option>
+                            <option value="barVertical">Vertical</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="chart-container">
+                      <canvas id="chartCities"></canvas>
+                    </div>
+                  </div>
+
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3><i class="fas fa-mobile-alt"></i> Churn por Canal</h3>
+                    </div>
+                    <div class="chart-container">
+                      <canvas id="chartChannelChurn"></canvas>
+                    </div>
+                  </div>
+
+                  <div class="chart-card">
+                    <div class="chart-header">
+                      <h3><i class="fas fa-user-clock"></i> Faixa Etária</h3>
+                    </div>
+                    <div class="chart-container">
+                      <canvas id="chartAge"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seção da Tabela Moderna -->
+              <div class="data-table-section">
+                <div class="table-header">
+                  <h3><i class="fas fa-table"></i> Visualização dos Dados</h3>
+                  <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="tableSearch" placeholder="Buscar...">
+                  </div>
+                </div>
+
+                <div class="table-wrapper">
+                  <table id="dataTable">
+                    <thead id="tableHeader"></thead>
+                    <tbody id="tableBody"></tbody>
+                  </table>
+                </div>
+
+                <div class="pagination-container">
+                  <div class="pagination-info" id="tableInfo">Mostrando 0 de 0 registros</div>
+                  <div class="pagination-controls">
+                    <button class="page-btn" id="prevPageBtn">
+                      <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <span class="page-number" id="pageNumber">1 / 1</span>
+                    <button class="page-btn" id="nextPageBtn">
+                      Próxima <i class="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="script.js"></script>
+
+<script>
+    if (localStorage.getItem('usuario_logado') !== 'true') {
+        window.location.href = "login.html";
+    }
+</script>
+
+<script>
+  // ============================================
+  // DASHBOARD - CÓDIGO OTIMIZADO E MODERNO
+  // ============================================
+  
+  // Variáveis Globais
+  let dashboardData = [];
+  let filteredData = [];
+  let currentPage = 1;
+  const itemsPerPage = 10;
+  let charts = {};
+
+  const DASHBOARD_CSV_URL = "datasetdashboard.csv";
+  const CSV_MAX_ROWS = 700000;
+
+  // --- Inicialização ---
+  document.addEventListener('DOMContentLoaded', function() {
+    // Eventos do Dashboard
+    document.getElementById('applyFiltersBtn')
+    .addEventListener('click', applyFilters);
+    document.getElementById('resetFiltersBtn').addEventListener('click', () => resetFilters(false));
+    document.getElementById('exportDataBtn').addEventListener('click', exportFilteredData);
+    document.getElementById('prevPageBtn').addEventListener('click', prevPage);
+    document.getElementById('nextPageBtn').addEventListener('click', nextPage);
+    
+    // Busca com debounce para melhor performance
+    let searchTimeout;
+    document.getElementById('tableSearch').addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => searchTable(e.target.value), 300);
+    });
+
+    // Eventos de Gráficos
+    document.getElementById('chart1Type').addEventListener('change', updateCharts);
+    document.getElementById('chart2Type').addEventListener('change', updateCharts);
+    document.getElementById('chart3Type').addEventListener('change', updateCharts);
+    document.getElementById('chart4Type').addEventListener('change', updateCharts);
+  });
+
+  // --- Funções Auxiliares (Parser) - Otimizadas ---
+  function toNumber(value) {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "number") return Number.isFinite(value) ? value : null;
+    
+    let s = String(value).trim();
+    if (!s) return null;
+    
+    s = s.replace(/R\$\s?/g, '').replace(/\s/g, '');
+    s = s.replace(/[^0-9,.\-]/g, '');
+    
+    if (s.includes('.') && s.includes(',')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else if (s.includes(',') && !s.includes('.')) {
+      s = s.replace(',', '.');
+    }
+    
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function toISODate(dateValue) {
+  if (dateValue === null || dateValue === undefined) return null;
+  const s = String(dateValue).trim();
+  if (!s) return null;
+
+  // pega só YYYY-MM-DD
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().split('T')[0];
+}
+
+
+  function parseCSVLine(line) {
+    const out = [];
+    let cur = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { 
+          cur += '"'; 
+          i++; 
+        } else { 
+          inQuotes = !inQuotes; 
+        }
+      } else if (ch === ',' && !inQuotes) {
+        out.push(cur); 
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  // --- Carregamento de Dados Otimizado ---
+  async function loadDashboardData() {
+    showDashboardLoading(true);
+    try {
+      const res = await fetch(DASHBOARD_CSV_URL, { 
+        cache: "no-store",
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Erro HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      dashboardData = [];
+      filteredData = [];
+      currentPage = 1;
+
+      await processCSVData(res);
+      resetFilters(true);
+      applyFilters();
+      showDashboardLoading(false);
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      showDashboardError(err.message || "Erro ao carregar dados do dashboard.");
+    }
+  }
+
+  async function processCSVData(response) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let header = null;
+    let idx = null;
+    let minDateISO = null, maxDateISO = null;
+    let rowCount = 0;
+
+    const finalize = () => {
+      setDateFilterRange(minDateISO, maxDateISO);
+      updateFilterOptions();
+    };
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      let lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || '';
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line || line.trim() === '') continue;
+
+        if (!header) {
+          header = parseCSVLine(line).map(h => h.trim());
+          // Cria índice otimizado
+          const headerMap = {};
+          header.forEach((h, index) => headerMap[h] = index);
+          idx = {
+            id: headerMap['ID_CLIENTE'],
+            situacao: headerMap['SITUACAO'],
+            dataRegistro: headerMap['DATA_REGISTRO'],
+            horaRegistro: headerMap['HORA_REGISTRO'],
+            genero: headerMap['GENERO'],
+            idade: headerMap['IDADE_APROX'],
+            cidade: headerMap['CIDADE_x'],
+            canal: headerMap['CANAL'],
+            servico: headerMap['SERVICO'],
+            meses: headerMap['MESES'],
+            ticket: headerMap['TICKET_MEDIO']
+          };
+          continue;
+        }
+
+        const fields = parseCSVLine(line);
+        const obj = mapCsvRowToDashboardObject(fields, idx);
+
+        if (!obj.id || !obj.data_iso) continue;
+
+        if (obj.data_iso) {
+          const iso = obj.data_iso;
+          if (!minDateISO || iso < minDateISO) minDateISO = iso;
+          if (!maxDateISO || iso > maxDateISO) maxDateISO = iso;
+        }
+
+        dashboardData.push(obj);
+        rowCount++;
+
+        if (rowCount >= CSV_MAX_ROWS) {
+          try { await reader.cancel(); } catch (_) {}
+          finalize();
+          return;
+        }
+      }
+    }
+    finalize();
+  }
+
+  function mapCsvRowToDashboardObject(fields, idx) {
+    const pick = (i) => (i >= 0 && i < fields.length) ? fields[i] : '';
+
+    const id = String(pick(idx.id) || '').trim();
+    const situacao = String(pick(idx.situacao) || '').trim().toUpperCase();
+    const churn = situacao === 'DESLIGADO' ? 1 : 0;
+
+    const dataRegistroRaw = String(pick(idx.dataRegistro) || '').trim();
+    const horaRegistro = String(pick(idx.horaRegistro) || '').trim();
+    const dataISO = toISODate(dataRegistroRaw);
+
+    const genero = (pick(idx.genero) || 'Não informado').trim() || 'Não informado';
+    const cidade = (pick(idx.cidade) || 'Não informado').trim() || 'Não informado';
+    const canal = (pick(idx.canal) || 'Não informado').trim() || 'Não informado';
+    const servico = (pick(idx.servico) || 'Não informado').trim() || 'Não informado';
+
+    const idade = toNumber(pick(idx.idade));
+    const meses = toNumber(pick(idx.meses));
+    const ticket = toNumber(pick(idx.ticket));
+
+    return {
+      id: id,
+      genero: genero,
+      cidade: cidade,
+      servico: servico,
+      canal: canal,
+      idade: idade ?? '',
+      tempo_contrato: meses ?? '',
+      valor_mensal: ticket ?? '',
+      data_contrato: dataRegistroRaw,
+      data_iso: dataISO,
+      churn: churn,
+      
+      // Chaves originais para exportação
+      ID_CLIENTE: id,
+      DATA_REGISTRO: dataRegistroRaw,
+      HORA_REGISTRO: horaRegistro,
+      SITUACAO: situacao,
+      CANAL: canal,
+      SERVICO: servico,
+      GENERO: genero,
+      IDADE_APROX: idade,
+      MESES: meses,
+      TICKET_MEDIO: ticket,
+      CIDADE: cidade
+    };
+  }
+
+  // --- UI Helpers Modernos ---
+  function showDashboardLoading(show) {
+    const loadingEl = document.getElementById('dashboardLoading');
+    const contentEl = document.getElementById('dashboardContent');
+    const errorEl = document.getElementById('dashboardError');
+    
+    loadingEl.style.display = show ? 'flex' : 'none';
+    contentEl.style.display = show ? 'none' : 'block';
+    errorEl.style.display = 'none';
+  }
+
+  function showDashboardError(message) {
+    const loadingEl = document.getElementById('dashboardLoading');
+    const contentEl = document.getElementById('dashboardContent');
+    const errorEl = document.getElementById('dashboardError');
+    
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'none';
+    errorEl.style.display = 'flex';
+    document.getElementById('errorMessage').textContent = message;
+  }
+
+  function setDateFilterRange(minDateISO, maxDateISO) {
+  const CAP_MIN = '2023-01-01';
+  const CAP_MAX = '2025-10-31';
+
+  // Garante limites globais
+  let min = minDateISO && minDateISO < CAP_MIN ? CAP_MIN : minDateISO;
+  let max = maxDateISO && maxDateISO > CAP_MAX ? CAP_MAX : maxDateISO;
+
+  if (!min) min = CAP_MIN;
+  if (!max) max = CAP_MAX;
+
+  const startInput = document.getElementById('filterDateStart');
+  const endInput = document.getElementById('filterDateEnd');
+
+  // Limites do input
+  startInput.min = CAP_MIN;
+  startInput.max = CAP_MAX;
+  endInput.min = CAP_MIN;
+  endInput.max = CAP_MAX;
+
+  // Valores iniciais
+  startInput.value = min;
+  endInput.value = max;
+}
+
+
+  function updateFilterOptions() {
+    const genderSelect = document.getElementById('filterGender');
+    const genders = new Set(dashboardData.map(d => d.genero).filter(Boolean));
+    genderSelect.innerHTML = '<option value="">Todos os Gêneros</option>';
+    Array.from(genders).sort().forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g; 
+      opt.textContent = g;
+      genderSelect.appendChild(opt);
+    });
+  }
+
+  function resetFilters(silent) {
+  document.getElementById('filterDateStart').value = '';
+  document.getElementById('filterDateEnd').value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterGender').value = '';
+  if (!silent) applyFilters();
+}
+
+
+  function applyFilters() {
+  const dateStart = document.getElementById('filterDateStart').value;
+  const dateEnd = document.getElementById('filterDateEnd').value;
+  const status = document.getElementById('filterStatus').value;
+  const gender = document.getElementById('filterGender').value;
+
+  const CAP_MIN = '2023-01-01';
+  const CAP_MAX = '2025-10-31';
+
+  const dateStartEff = dateStart && dateStart < CAP_MIN ? CAP_MIN : dateStart;
+  const dateEndEff = dateEnd && dateEnd > CAP_MAX ? CAP_MAX : dateEnd;
+
+  filteredData = dashboardData.filter(item => {
+    const iso = item.data_iso; // YYYY-MM-DD
+
+    // --- FILTRO DE DATA ---
+    if (dateStartEff || dateEndEff) {
+      if (!iso) return false;
+      if (dateStartEff && iso < dateStartEff) return false;
+      if (dateEndEff && iso > dateEndEff) return false;
+    }
+
+    // --- FILTRO STATUS ---
+    if (status === 'ativo' && item.churn === 1) return false;
+    if (status === 'churn' && item.churn === 0) return false;
+
+    // --- FILTRO GÊNERO ---
+    if (gender && item.genero !== gender) return false;
+
+    return true;
+  });
+
+  currentPage = 1;
+  updateDashboard();
+}
+
+
+  function updateDashboard() {
+    updateKPIs();
+    updateCharts();
+    updateTable();
+    updatePagination();
+  }
+
+  // --- KPIs Modernos ---
+  function updateKPIs() {
+    const totalRegistros = filteredData.length;
+    
+    // Lógica otimizada para contar clientes únicos com último status
+    const clientMap = new Map();
+    for (const row of filteredData) {
+      const id = row.id;
+      if (!id) continue;
+      
+      const currentDate = row.data_iso || '';
+      const existing = clientMap.get(id);
+      
+      if (!existing || currentDate > existing.date) {
+        clientMap.set(id, {
+          date: currentDate,
+          churn: row.churn
+        });
+      }
+    }
+    
+    const totalClientes = clientMap.size;
+    let churnClientes = 0;
+    
+    for (const v of clientMap.values()) {
+      if (v.churn === 1) churnClientes++;
+    }
+    
+    const ativosClientes = totalClientes - churnClientes;
+    const churnRate = totalClientes > 0 ? ((churnClientes / totalClientes) * 100).toFixed(1) : '0.0';
+
+    document.getElementById('kpiTotalRecords').textContent = totalRegistros.toLocaleString('pt-BR');
+    document.getElementById('kpiChurnRate').textContent = churnRate + '%';
+    document.getElementById('kpiActiveClients').textContent = ativosClientes.toLocaleString('pt-BR');
+    document.getElementById('kpiChurnClients').textContent = churnClientes.toLocaleString('pt-BR');
+  }
+
+  // --- Gráficos Otimizados ---
+  function destroyCharts() {
+    Object.values(charts).forEach(ch => ch && ch.destroy && ch.destroy());
+    charts = {};
+  }
+
+  function updateCharts() {
+    destroyCharts();
+    createServiceChart();
+    createGenderChart();
+    createTimeTrendChart();
+    createTopCitiesChart();
+    createChannelChurnChart();
+    createAgeDistributionChart();
+  }
+
+  function createServiceChart() {
+    const ctx = document.getElementById('chartService').getContext('2d');
+    const chartType = document.getElementById('chart1Type').value;
+    
+    const serviceCounts = {};
+    filteredData.forEach(item => {
+      const s = item.servico || 'Não informado';
+      serviceCounts[s] = (serviceCounts[s] || 0) + 1;
+    });
+
+    // Ordena serviços por quantidade
+    const sortedServices = Object.entries(serviceCounts)
+      .sort((a, b) => b[1] - a[1]);
+
+    const labels = [];
+    const values = [];
+
+    let outrosTotal = 0;
+
+    // Mantém só os 6 maiores
+    sortedServices.forEach((item, index) => {
+      if (index < 6) {
+        labels.push(item[0]);
+        values.push(item[1]);
+      } else {
+        outrosTotal += item[1];
+      }
+    });
+
+    if (outrosTotal > 0) {
+      labels.push('Outros');
+      values.push(outrosTotal);
+    }
+
+    charts.service = new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels,
+        datasets: [{
+          label: 'Quantidade de Serviços',
+          data: values,
+          backgroundColor: [
+            '#3b82f6', '#ef4444', '#10b981', '#f59e0b', 
+            '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'
+          ]
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        plugins: { 
+          legend: { 
+            display: chartType !== 'bar',
+            position: 'bottom'
+          } 
+        } 
+      }
+    });
+  }
+
+  function createGenderChart() {
+    const canvas = document.getElementById('chartGender');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const chartType = document.getElementById('chart2Type').value;
+
+    const genderCounts = {};
+    filteredData.forEach(item => {
+      const g = item.genero || 'Não informado';
+      genderCounts[g] = (genderCounts[g] || 0) + 1;
+    });
+
+    charts.gender = new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels: Object.keys(genderCounts),
+        datasets: [{
+          label: 'Quantidade',
+          data: Object.values(genderCounts),
+          backgroundColor: [
+            '#3b82f6',
+            '#ef4444',
+            '#10b981',
+            '#f59e0b',
+            '#6b7280'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            display: chartType !== 'bar'
+          },
+          datalabels: (chartType === 'pie' || chartType === 'doughnut')
+            ? {
+                color: '#fff',
+                font: {
+                  weight: 'bold',
+                  size: 13
+                },
+                formatter: (value, ctx) => {
+                  const total = ctx.chart.data.datasets[0].data
+                    .reduce((a, b) => a + b, 0);
+                  const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                  return `${value}\n(${percent}%)`;
+                }
+              }
+            : { display: false }
+        }
+      }
+    });
+  }
+
+  function createTimeTrendChart() {
+    const ctx = document.getElementById('chartTimeTrend').getContext('2d');
+    const chartType = document.getElementById('chart3Type').value;
+    
+    const monthlyData = {};
+    filteredData.forEach(item => {
+      const iso = item.data_iso;
+      if (!iso) return;
+      const ym = iso.slice(0, 7);
+      if (!monthlyData[ym]) monthlyData[ym] = { total: 0, churn: 0 };
+      monthlyData[ym].total++;
+      if (item.churn === 1) monthlyData[ym].churn++;
+    });
+    
+    const months = Object.keys(monthlyData).sort();
+    const churnRates = months.map(m => {
+      const d = monthlyData[m];
+      return d.total > 0 ? (d.churn / d.total) * 100 : 0;
+    });
+
+    charts.timeTrend = new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels: months.map(m => m.replace('-', '/')),
+        datasets: [{
+          label: 'Taxa de Churn (%)',
+          data: churnRates,
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 2,
+          fill: chartType === 'line',
+          tension: 0.4
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function createTopCitiesChart() {
+    const canvas = document.getElementById('chartCities');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const typeSelect = document.getElementById('chart4Type');
+    const selectedType = typeSelect ? typeSelect.value : 'barHorizontal';
+    const indexAxis = selectedType === 'barVertical' ? 'x' : 'y';
+
+    const cityChurn = {};
+    filteredData.forEach(item => {
+      if (item.churn === 1) {
+        const city = item.cidade || 'Não informado';
+        cityChurn[city] = (cityChurn[city] || 0) + 1;
+      }
+    });
+
+    const sorted = Object.entries(cityChurn)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    charts.cities = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(([c]) => c),
+        datasets: [{
+          label: 'Registros de Churn',
+          data: sorted.map(([, v]) => v),
+          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+          borderColor: 'rgba(239, 68, 68, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: indexAxis,
+        scales: {
+          x: { beginAtZero: true },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function createChannelChurnChart() {
+    const ctx = document.getElementById('chartChannelChurn').getContext('2d');
+    const channelData = {};
+    filteredData.forEach(item => {
+      const k = item.canal;
+      if (!channelData[k]) channelData[k] = { total: 0, churn: 0 };
+      channelData[k].total++;
+      if (item.churn === 1) channelData[k].churn++;
+    });
+    
+    const labels = Object.keys(channelData);
+    const rates = labels.map(k => {
+      const data = channelData[k];
+      return data.total ? (data.churn / data.total) * 100 : 0;
+    });
+
+    charts.channelChurn = new Chart(ctx, {
+      type: 'bar',
+      data: { 
+        labels, 
+        datasets: [{ 
+          label: 'Taxa de Churn (%)', 
+          data: rates, 
+          backgroundColor: 'rgba(245, 158, 11, 0.7)',
+          borderColor: 'rgba(245, 158, 11, 1)',
+          borderWidth: 1
+        }] 
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false, 
+        scales: { 
+          y: { 
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            }
+          } 
+        } 
+      }
+    });
+  }
+
+  function createAgeDistributionChart() {
+    const ctx = document.getElementById('chartAge').getContext('2d');
+    const buckets = { '0-25': 0, '26-40': 0, '41-55': 0, '56-70': 0, '71+': 0, 'N/I': 0 };
+    
+    filteredData.forEach(item => {
+      const age = Number(item.idade);
+      if (!Number.isFinite(age)) { 
+        buckets['N/I']++; 
+        return; 
+      }
+      if (age <= 25) buckets['0-25']++;
+      else if (age <= 40) buckets['26-40']++;
+      else if (age <= 55) buckets['41-55']++;
+      else if (age <= 70) buckets['56-70']++;
+      else buckets['71+']++;
+    });
+
+    charts.age = new Chart(ctx, {
+      type: 'bar',
+      data: { 
+        labels: Object.keys(buckets), 
+        datasets: [{ 
+          label: 'Registros', 
+          data: Object.values(buckets), 
+          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          borderColor: 'rgba(16, 185, 129, 1)',
+          borderWidth: 1
+        }] 
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false 
+      }
+    });
+  }
+
+  // --- Tabela Moderna ---
+  function updateTable() {
+    const header = document.getElementById('tableHeader');
+    const body = document.getElementById('tableBody');
+    header.innerHTML = ''; 
+    body.innerHTML = '';
+
+    if (filteredData.length === 0) {
+      const emptyRow = document.createElement('tr');
+      const emptyCell = document.createElement('td');
+      emptyCell.colSpan = 11;
+      emptyCell.textContent = 'Nenhum dado disponível para os filtros selecionados';
+      emptyCell.style.textAlign = 'center';
+      emptyCell.style.padding = '40px';
+      emptyCell.style.color = 'var(--muted)';
+      emptyRow.appendChild(emptyCell);
+      body.appendChild(emptyRow);
+      
+      document.getElementById('tableInfo').textContent = 'Mostrando 0 de 0 registros';
+      document.getElementById('pageNumber').textContent = '1 / 1';
+      return;
+    }
+
+    const columnsToShow = [
+      { key: 'ID_CLIENTE', label: 'ID' },
+      { key: 'DATA_REGISTRO', label: 'Data Registro' },
+      { key: 'SITUACAO', label: 'Situação' },
+      { key: 'CHURN', label: 'Churn' },
+      { key: 'CANAL', label: 'Canal' },
+      { key: 'SERVICO', label: 'Serviço' },
+      { key: 'GENERO', label: 'Gênero' },
+      { key: 'IDADE_APROX', label: 'Idade' },
+      { key: 'MESES', label: 'Meses' },
+      { key: 'TICKET_MEDIO', label: 'Ticket Médio' },
+      { key: 'CIDADE', label: 'Cidade' }
+    ];
+
+    // Cabeçalho
+    const headerRow = document.createElement('tr');
+    columnsToShow.forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col.label;
+      headerRow.appendChild(th);
+    });
+    header.appendChild(headerRow);
+
+    // Dados paginados
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageData = filteredData.slice(start, end);
+
+    pageData.forEach(item => {
+      const row = document.createElement('tr');
+      columnsToShow.forEach(col => {
+        const td = document.createElement('td');
+        
+        if (col.key === 'CHURN') {
+          td.innerHTML = item.churn === 1 
+            ? '<span style="color:#ef4444; font-weight:bold">SIM</span>' 
+            : '<span style="color:#10b981; font-weight:bold">NÃO</span>';
+        } else if (col.key === 'TICKET_MEDIO') {
+          const value = item[col.key];
+          td.textContent = (typeof value === 'number') 
+            ? `R$ ${value.toFixed(2).replace('.', ',')}` 
+            : (value || '');
+        } else if (col.key === 'DATA_REGISTRO') {
+          const date = new Date(item[col.key]);
+          td.textContent = !isNaN(date.getTime()) 
+            ? date.toLocaleDateString('pt-BR') 
+            : (item[col.key] || '');
+        } else {
+          td.textContent = item[col.key] || '';
+        }
+        
+        row.appendChild(td);
+      });
+      body.appendChild(row);
+    });
+    
+    document.getElementById('tableInfo').textContent = 
+      `Mostrando ${start+1}-${Math.min(end, filteredData.length)} de ${filteredData.length.toLocaleString('pt-BR')} registros`;
+  }
+
+  function updatePagination() {
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+    document.getElementById('pageNumber').textContent = `${currentPage} / ${totalPages}`;
+    document.getElementById('prevPageBtn').classList.toggle('disabled', currentPage <= 1);
+    document.getElementById('nextPageBtn').classList.toggle('disabled', currentPage >= totalPages);
+  }
+
+  function nextPage() {
+    if (currentPage < Math.ceil(filteredData.length / itemsPerPage)) { 
+      currentPage++; 
+      updateTable(); 
+      updatePagination(); 
+    }
+  }
+  
+  function prevPage() {
+    if (currentPage > 1) { 
+      currentPage--; 
+      updateTable(); 
+      updatePagination(); 
+    }
+  }
+
+  function searchTable(query) {
+    query = query.trim().toLowerCase();
+    if (!query) { 
+      applyFilters(); 
+      return; 
+    }
+    
+    filteredData = dashboardData.filter(item => 
+      Object.values(item).some(val => 
+        String(val ?? '').toLowerCase().includes(query)
+      )
+    );
+    
+    currentPage = 1;
+    updateDashboard();
+  }
+
+  function exportFilteredData() {
+    if (!filteredData.length) {
+      alert("Sem dados para exportar.");
+      return;
+    }
+    
+    const cols = [
+      'ID_CLIENTE','DATA_REGISTRO','HORA_REGISTRO','SITUACAO',
+      'CANAL','SERVICO','GENERO','IDADE_APROX',
+      'MESES','TICKET_MEDIO','CIDADE'
+    ];
+    
+    const header = cols.join(',') + '\n';
+    const rows = filteredData.map(r => 
+      cols.map(c => {
+        const value = r[c];
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value || '';
+      }).join(',')
+    ).join('\n');
+    
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; 
+    a.download = `export_dashboard_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ============================================
+  // FUNÇÕES GERAIS (mantidas da aba de predição)
+  // ============================================
+  
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.plugins.datalabels = {
+      display: false
+    };
+  }
+  
+  document.getElementById("ID_CLIENTE").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { 
+      e.preventDefault(); 
+      buscarCliente(); 
+    }
+  });
+  
+  function closeAlert() {
+    document.getElementById('alertNotification').classList.add('hidden');
+  }
+
+  function showTab(tabId) {
+    // Esconde todos os conteúdos
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(tab => tab.classList.remove('active'));
+
+    // Desativa os botões
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+
+    // Ativa a aba certa
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) {
+      targetTab.classList.add('active');
+    }
+
+    // Ativa o botão certo
+    const clickedBtn = document.querySelector(`button[onclick="showTab('${tabId}')"]`);
+    if (clickedBtn) {
+      clickedBtn.classList.add('active');
+    }
+
+    // Carrega dados do dashboard se necessário
+    if (tabId === 'tabDashboard') {
+      console.log("Aba Dashboard aberta. Carregando dados automaticamente...");
+      loadDashboardData();
+    }
+  }
+
+  // Funções da sidebar (mantidas)
+  function setupSidebarResize() {
+    const sidebar = document.getElementById('sidebar');
+    const handle = document.getElementById('resizeHandle');
+    const main = document.getElementById('mainContent');
+    const indicator = document.getElementById('resizeIndicator');
+    const span = document.getElementById('sidebarWidth');
+    let isResizing = false;
+
+    handle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      document.body.style.cursor = 'col-resize';
+      indicator.classList.add('active');
+      const startX = e.clientX;
+      const startW = parseInt(getComputedStyle(sidebar).width, 10);
+      const onMove = (em) => {
+        if(!isResizing) return;
+        const newW = Math.max(250, Math.min(400, startW + em.clientX - startX));
+        sidebar.style.width = newW + 'px';
+        main.style.marginLeft = newW + 'px';
+        span.textContent = newW + 'px';
+      };
+      const onUp = () => {
+        isResizing = false;
+        document.body.style.cursor = '';
+        indicator.classList.remove('active');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function atualizarEstatisticasHistorico() {
+    const hist = JSON.parse(localStorage.getItem('churn_history') || '[]');
+    document.getElementById('totalAnalises').textContent = hist.length;
+    document.getElementById('altoRisco').textContent = hist.filter(i => i.risco === 'ALTO').length;
+  }
+
+  // Inicialização da sidebar
+  document.addEventListener('DOMContentLoaded', function() {
+    setupSidebarResize();
+    atualizarEstatisticasHistorico();
+  });
+</script>
+</body>
+</html>
+
