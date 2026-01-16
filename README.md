@@ -14,7 +14,7 @@ Visual Studio Code (VS Code)
 
 ## Organização do código-fonte
 - **web:** pasta `frontend/` (interface do sistema)
-- **app:** arquivos do back-end/modelo na raiz do repositório (ex.: `api.py`, `requirements.txt`, modelo `.joblib` e arquivos de dados)
+- **app:** back-end/modelo na raiz do repositório (ex.: `api.py`, `requirements.txt`, modelo `.joblib` e arquivos de suporte)
 
 ---
 
@@ -38,7 +38,8 @@ https://drive.google.com/drive/folders/1nfOjcCs6zfFhpv87kFY53S1Dg6jo27UZ?usp=sha
    - `datasetdashboard.csv`
    - `datasetdashboard.xlsx`
 3. Abra a pasta principal do projeto no seu computador (a mesma onde estão `api.py` e a pasta `frontend/`).
-   MachineLearning-An-lisedeChurn-main/
+4. Cole os dois arquivos **na raiz do projeto**, no mesmo nível do `api.py`, ficando assim:
+MachineLearning-An-lisedeChurn-main/
 ├─ frontend/
 ├─ api.py
 ├─ requirements.txt
@@ -46,8 +47,9 @@ https://drive.google.com/drive/folders/1nfOjcCs6zfFhpv87kFY53S1Dg6jo27UZ?usp=sha
 ├─ datasetdashboard.xlsx
 └─ ...
 
-4. Confirme que os nomes ficaram **exatamente iguais** (sem “(1)”, sem renomear automaticamente).
-5. Depois disso, siga para o Passo 2 (back-end) e o Passo 3 (front-end).
+
+5. Confirme que os nomes ficaram **exatamente iguais** (sem “(1)”, sem renomear automaticamente).
+6. Depois disso, siga para o Passo 2 (back-end) e o Passo 3 (front-end).
 
 > Se aparecer erro de “arquivo não encontrado” ao rodar, normalmente é porque os arquivos não estão na raiz do projeto ou porque o nome ficou diferente. Ajuste o nome e mantenha ao lado do `api.py`.
 
@@ -80,8 +82,23 @@ https://drive.google.com/drive/folders/1nfOjcCs6zfFhpv87kFY53S1Dg6jo27UZ?usp=sha
 
 ---
 
+## Observação importante (envio de e-mail)
+O front-end possui uma integração de **envio de alerta por e-mail (EmailJS)** com um e-mail configurado diretamente no código.  
+Antes de apresentar/rodar em outra máquina, **altere o e-mail de destino** no arquivo:
+
+- `frontend/script.js` → procurar pela configuração `EMAIL_CONFIG` e mudar o campo `TO_EMAIL` para o e-mail desejado.
+
+---
+
+## Banco de dados / Dados
+Este projeto **não utiliza banco de dados relacional**. A base usada para alimentar o dashboard e análises é fornecida por arquivos (CSV/XLSX).  
+Para rodar localmente, é obrigatório adicionar:
+- `datasetdashboard.csv`
+- `datasetdashboard.xlsx`
+(conforme o Passo 1)
+
+---
+
 ## Vídeo da apresentação
 Link: https://drive.google.com/file/d/10rlUPmeVLUXd546WSmu8fY9WCeFmga28/view?usp=sharing 
-
-5. Cole os dois arquivos **na raiz do projeto**, no mesmo nível do `api.py`, ficando assim:
 
